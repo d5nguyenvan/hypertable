@@ -29,8 +29,7 @@ namespace Hypertable {
   class OperationMoveRangeExplicit : public Operation {
   public:
     OperationMoveRangeExplicit(ContextPtr &context, const TableIdentifier &table,
-                       const RangeSpec &range, const String &transfer_log,
-                       uint64_t soft_limit, bool is_split);
+                               const RangeSpec &range, const String &location_dest);
     OperationMoveRangeExplicit(ContextPtr &context, const MetaLog::EntityHeader &header_);
     OperationMoveRangeExplicit(ContextPtr &context, EventPtr &event);
     virtual ~OperationMoveRangeExplicit() { }
@@ -48,12 +47,13 @@ namespace Hypertable {
     virtual void decode_request(const uint8_t **bufp, size_t *remainp);
     virtual bool remove_explicitly() { return m_remove_explicitly; }
 
-    String get_location() { return m_location; }
+    String get_location() { return m_location_dest; }
 
   private:
     TableIdentifierManaged m_table;
     RangeSpecManaged m_range;
-    String m_location;
+    String m_location_source;
+    String m_location_dest;
     String m_range_name;
     bool m_remove_explicitly;
   };

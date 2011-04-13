@@ -587,7 +587,7 @@ MasterClient::move_range(TableIdentifier *table, RangeSpec &range,
 void 
 MasterClient::move_range_explicit(TableIdentifier *table, RangeSpec &range,
                                   const String &target, DispatchHandler *handler,
-                                  Timer *timer = 0) {
+                                  Timer *timer) {
   Timer tmp_timer(m_timeout_ms);
   CommBufPtr cbp;
   EventPtr event;
@@ -604,7 +604,7 @@ MasterClient::move_range_explicit(TableIdentifier *table, RangeSpec &range,
 
 void 
 MasterClient::move_range_explicit(TableIdentifier *table, RangeSpec &range,
-                                  const String &target, Timer *timer=0) {
+                                  const String &target, Timer *timer) {
   Timer tmp_timer(m_timeout_ms);
   CommBufPtr cbp;
   EventPtr event;
