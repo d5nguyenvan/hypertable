@@ -64,6 +64,7 @@ NameIdMapper.cc
 Namespace.cc
 NamespaceCache.cc
 RangeLocator.cc
+RangeMoveSpec.cc
 RangeServerClient.cc
 RangeServerProtocol.cc
 RangeState.cc
