@@ -32,49 +32,40 @@
 #include "Hypertable/Lib/Key.h"
 #include "Hypertable/Lib/TableScanner.h"
 
-#include "OperationMoveRangeExplicit.h"
+#include "OperationBalance.h"
 #include "OperationProcessor.h"
 #include "Utility.h"
 
 using namespace Hypertable;
 using namespace Hyperspace;
 
-OperationMoveRangeExplicit::OperationMoveRangeExplicit(ContextPtr &context, const TableIdentifier &table,
-                                                       const RangeSpec &range, const String &location_dest)
-  : Operation(context, MetaLog::EntityType::OPERATION_MOVE_RANGE_EXPLICIT),
-    m_table(table), m_range(range), m_location_dest(location_dest), m_remove_explicitly(true) {
-  m_range_name = format("%s[%s..%s]", m_table.id, m_range.start_row, m_range.end_row);
+OperationBalance::OperationBalance(ContextPtr &context, BalancePlan &plan)
+  : Operation(context, MetaLog::EntityType::OPERATION_BALANCE),  m_plan(plan) {
   initialize_dependencies();
-  m_hash_code = Utility::range_hash_code(m_table, m_range, "OperationMoveRangeExplicit");
 }
 
-OperationMoveRangeExplicit::OperationMoveRangeExplicit(ContextPtr &context,
-                                       const MetaLog::EntityHeader &header_)
-  : Operation(context, header_), m_remove_explicitly(true) {
+OperationBalance::OperationBalance(ContextPtr &context,
+                                   const MetaLog::EntityHeader &header_)
+  : Operation(context, header_) {
+  m_hash_code = md5_hash("OperationBalance");
 }
 
-OperationMoveRangeExplicit::OperationMoveRangeExplicit(ContextPtr &context, EventPtr &event)
-  : Operation(context, event, MetaLog::EntityType::OPERATION_MOVE_RANGE_EXPLICIT),
-    m_remove_explicitly(true) {
+OperationBalance::OperationBalance(ContextPtr &context, EventPtr &event)
+  : Operation(context, event, MetaLog::EntityType::OPERATION_BALANCE) {
   const uint8_t *ptr = event->payload;
   size_t remaining = event->payload_len;
   decode_request(&ptr, &remaining);
   initialize_dependencies();
 }
 
-void OperationMoveRangeExplicit::initialize_dependencies() {
-  m_exclusivities.insert(Utility::range_hash_string(m_table, m_range, "OperationMoveRangeExplicit"));
+void OperationBalance::initialize_dependencies() {
   m_dependencies.insert(Dependency::INIT);
-  m_dependencies.insert(Dependency::SERVERS);
-  m_dependencies.insert(m_location_dest);
-  m_dependencies.insert(Utility::range_hash_string(m_table, m_range));
-  m_dependencies.insert(Dependency::ROOT);
-  m_dependencies.insert(Dependency::METADATA);
-  m_obstructions.insert(String("id:") + m_table.id);
+  m_hash_code = md5_hash("OperationBalance");
 }
 
 
-void OperationMoveRangeExplicit::execute() {
+void OperationBalance::execute() {
+#if 0
   int32_t state = get_state();
 
   HT_INFOF("Entering MoveRange-%lld %s state=%s",
@@ -160,56 +151,33 @@ void OperationMoveRangeExplicit::execute() {
   HT_INFOF("Leaving MoveRange-%lld %s (%s -> %s)",
            (Lld)header.id, m_range_name.c_str(),
            m_location_source.c_str(), m_location_dest.c_str());
+#endif
 }
 
 
-void OperationMoveRangeExplicit::display_state(std::ostream &os) {
-  os << " " << m_table << " " << m_range << " dest='" << m_location_dest << " ";
+void OperationBalance::display_state(std::ostream &os) {
 }
 
-size_t OperationMoveRangeExplicit::encoded_state_length() const {
-  return m_table.encoded_length() + m_range.encoded_length() +
-    Serialization::encoded_length_vstr(m_location_dest);
+size_t OperationBalance::encoded_state_length() const {
+  return m_plan.encoded_length();
 }
 
-void OperationMoveRangeExplicit::encode_state(uint8_t **bufp) const {
-  m_table.encode(bufp);
-  m_range.encode(bufp);
-  Serialization::encode_vstr(bufp, m_location_dest);
+void OperationBalance::encode_state(uint8_t **bufp) const {
+  m_plan.encode(bufp);
 }
 
-void OperationMoveRangeExplicit::decode_state(const uint8_t **bufp, size_t *remainp) {
+void OperationBalance::decode_state(const uint8_t **bufp, size_t *remainp) {
   decode_request(bufp, remainp);
 }
 
-void OperationMoveRangeExplicit::decode_request(const uint8_t **bufp, size_t *remainp) {
-  m_table.decode(bufp, remainp);
-  m_range.decode(bufp, remainp);
-  m_location_dest = Serialization::decode_vstr(bufp, remainp);
-  m_range_name = format("%s[%s..%s]", m_table.id, m_range.start_row, m_range.end_row);
-  m_hash_code = Utility::range_hash_code(m_table, m_range, "OperationMoveRangeExplicit");
+void OperationBalance::decode_request(const uint8_t **bufp, size_t *remainp) {
+  m_plan.decode(bufp, remainp);
 }
 
-const String OperationMoveRangeExplicit::name() {
-  return "OperationMoveRangeExplicit";
+const String OperationBalance::name() {
+  return "OperationBalance";
 }
 
-const String OperationMoveRangeExplicit::label() {
-  return format("MoveRange %s[%s..%s] %s",
-                m_table.id, m_range.start_row, m_range.end_row, m_location_dest.c_str());
-}
-
-const String OperationMoveRangeExplicit::graphviz_label() {
-  String start_row = m_range.start_row;
-  String end_row = m_range.end_row;
-
-  if (start_row.length() > 20)
-    start_row = start_row.substr(0, 10) + ".." + start_row.substr(start_row.length()-10, 10);
-
-  if (!strcmp(end_row.c_str(), Key::END_ROW_MARKER))
-    end_row = "END_ROW_MARKER";
-  else if (end_row.length() > 20)
-    end_row = end_row.substr(0, 10) + ".." + end_row.substr(end_row.length()-10, 10);
-
-  return format("MoveRangeExplicit %s\\n%s\\n%s", m_table.id, start_row.c_str(), end_row.c_str());
+const String OperationBalance::label() {
+  return format("Balance (%u moves)", (unsigned)m_plan.moves.size());
 }

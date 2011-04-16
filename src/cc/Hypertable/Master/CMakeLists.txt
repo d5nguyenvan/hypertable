@@ -27,6 +27,7 @@ MetaLogDefinitionMaster.cc
 Monitoring.cc
 Operation.cc
 OperationAlterTable.cc
+OperationBalance.cc
 OperationCollectGarbage.cc
 OperationCreateNamespace.cc
 OperationCreateTable.cc
@@ -35,7 +36,6 @@ OperationDropTable.cc
 OperationGatherStatistics.cc
 OperationInitialize.cc
 OperationMoveRange.cc
-OperationMoveRangeExplicit.cc
 OperationProcessor.cc
 OperationRecoverServer.cc
 OperationRegisterServer.cc

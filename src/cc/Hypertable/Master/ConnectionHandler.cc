@@ -33,6 +33,7 @@
 #include "ConnectionHandler.h"
 
 #include "OperationAlterTable.h"
+#include "OperationBalance.h"
 #include "OperationCollectGarbage.h"
 #include "OperationCreateNamespace.h"
 #include "OperationCreateTable.h"
@@ -41,7 +42,6 @@
 #include "OperationGatherStatistics.h"
 #include "OperationProcessor.h"
 #include "OperationMoveRange.h"
-#include "OperationMoveRangeExplicit.h"
 #include "OperationRecoverServer.h"
 #include "OperationRegisterServer.h"
 #include "OperationRelinquishAcknowledge.h"
@@ -122,13 +122,12 @@ void ConnectionHandler::handle(EventPtr &event) {
         }
         m_context->op->add_operation(operation);
         return;
-      case MasterProtocol::COMMAND_MOVE_RANGE_EXPLICIT:
-        operation = new OperationMoveRangeExplicit(m_context, event);
-        m_context->op->add_operation(operation);
-        return;
       case MasterProtocol::COMMAND_RELINQUISH_ACKNOWLEDGE:
         operation = new OperationRelinquishAcknowledge(m_context, event);
         break;
+      case MasterProtocol::COMMAND_BALANCE:
+        operation = new OperationBalance(m_context, event);
+        m_context->op->add_operation(operation);
       case MasterProtocol::COMMAND_SHUTDOWN:
         HT_INFO("Received shutdown command");
         m_shutdown = true;

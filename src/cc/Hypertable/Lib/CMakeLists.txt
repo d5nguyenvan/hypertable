@@ -19,6 +19,7 @@
 
 set(Hypertable_SRCS
 ApacheLogParser.cc
+BalancePlan.cc
 BlockCompressionCodec.cc
 BlockCompressionCodecBmz.cc
 BlockCompressionCodecLzo.cc

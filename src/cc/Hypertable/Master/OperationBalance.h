@@ -19,47 +19,40 @@
  * 02110-1301, USA.
  */
 
-#ifndef HYPERTABLE_OPERATIONMOVERANGEEXPLICIT_H
-#define HYPERTABLE_OPERATIONMOVERANGEEXPLICIT_H
+#ifndef HYPERTABLE_OPERATIONBALANCE_H
+#define HYPERTABLE_OPERATIONBALANCE_H
 
 #include "Operation.h"
 
+#include "Hypertable/Lib/BalancePlan.h"
+
 namespace Hypertable {
 
-  class OperationMoveRangeExplicit : public Operation {
+  class OperationBalance : public Operation {
   public:
-    OperationMoveRangeExplicit(ContextPtr &context, const TableIdentifier &table,
-                               const RangeSpec &range, const String &location_dest);
-    OperationMoveRangeExplicit(ContextPtr &context, const MetaLog::EntityHeader &header_);
-    OperationMoveRangeExplicit(ContextPtr &context, EventPtr &event);
-    virtual ~OperationMoveRangeExplicit() { }
+    OperationBalance(ContextPtr &context, BalancePlan &plan);
+    OperationBalance(ContextPtr &context, const MetaLog::EntityHeader &header_);
+    OperationBalance(ContextPtr &context, EventPtr &event);
+    virtual ~OperationBalance() { }
 
     void initialize_dependencies();
 
     virtual void execute();
     virtual const String name();
     virtual const String label();
-    virtual const String graphviz_label();
     virtual void display_state(std::ostream &os);
     virtual size_t encoded_state_length() const;
     virtual void encode_state(uint8_t **bufp) const;
     virtual void decode_state(const uint8_t **bufp, size_t *remainp);
     virtual void decode_request(const uint8_t **bufp, size_t *remainp);
-    virtual bool remove_explicitly() { return m_remove_explicitly; }
-
-    String get_location() { return m_location_dest; }
+    virtual bool exclusive() { return true; }
 
   private:
-    TableIdentifierManaged m_table;
-    RangeSpecManaged m_range;
-    String m_location_source;
-    String m_location_dest;
-    String m_range_name;
-    bool m_remove_explicitly;
+    BalancePlan m_plan;
   };
 
-  typedef intrusive_ptr<OperationMoveRangeExplicit> OperationMoveRangeExplicitPtr;
+  typedef intrusive_ptr<OperationBalance> OperationBalancePtr;
 
 } // namespace Hypertable
 
-#endif // HYPERTABLE_OPERATIONMOVERANGEEXPLICIT_H
+#endif // HYPERTABLE_OPERATIONBALANCE_H

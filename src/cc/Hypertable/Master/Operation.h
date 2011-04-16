@@ -176,7 +176,7 @@ namespace Hypertable {
         OPERATION_GET_SCHEMA             = 0x00020010,
         OPERATION_MOVE_RANGE             = 0x00020011,
         OPERATION_RELINQUISH_ACKNOWLEDGE = 0x00020012,
-        OPERATION_MOVE_RANGE_EXPLICIT    = 0x00020013
+        OPERATION_BALANCE                = 0x00020013
       };
     }
   }

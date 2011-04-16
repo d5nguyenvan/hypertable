@@ -584,57 +584,6 @@ MasterClient::move_range(TableIdentifier *table, RangeSpec &range,
 }
 
 
-void 
-MasterClient::move_range_explicit(TableIdentifier *table, RangeSpec &range,
-                                  const String &target, DispatchHandler *handler,
-                                  Timer *timer) {
-  Timer tmp_timer(m_timeout_ms);
-  CommBufPtr cbp;
-  EventPtr event;
-  String label = format("move_range_explicit(%s[%s..%s], target='%s')",
-                        table->id, range.start_row, range.end_row, target.c_str());
-
-  initialize(timer, tmp_timer);
-
-  cbp = MasterProtocol::create_move_range_explicit_request(table, range, target);
-
-  send_message_async(cbp, handler, timer, label);
-}
-
-
-void 
-MasterClient::move_range_explicit(TableIdentifier *table, RangeSpec &range,
-                                  const String &target, Timer *timer) {
-  Timer tmp_timer(m_timeout_ms);
-  CommBufPtr cbp;
-  EventPtr event;
-  String label = format("move_range_explicit(%s[%s..%s], target='%s')",
-                        table->id, range.start_row, range.end_row, target.c_str());
-
-  initialize(timer, tmp_timer);
-
-  try {
-    while (!timer->expired()) {
-      cbp = MasterProtocol::create_move_range_explicit_request(table, range, target);
-
-      if (!send_message(cbp, timer, event, label))
-        continue;
-      return;
-    }
-    {
-      ScopedLock lock(m_mutex);
-      HT_THROWF(Error::REQUEST_TIMEOUT,
-                "MasterClient operation %s to master %s failed", label.c_str(),
-                m_master_addr.format().c_str());
-    }
-  }
-  catch (Exception &e) {
-    if (e.code() == Error::MASTER_OPERATION_IN_PROGRESS)
-      return;
-    HT_THROW2(e.code(), e, label);
-  }
-}
-
 
 void
 MasterClient::relinquish_acknowledge(TableIdentifier *table, RangeSpec &range,
@@ -845,6 +794,52 @@ void MasterClient::shutdown(Timer *timer) {
     int32_t error = MasterProtocol::response_code(event);
     if (error != Error::COMM_BROKEN_CONNECTION)
       HT_THROW(error, "Master 'shutdown' error");
+  }
+}
+
+void MasterClient::balance(BalancePlan &plan, DispatchHandler *handler,
+                           Timer *timer) {
+  Timer tmp_timer(m_timeout_ms);
+  CommBufPtr cbp;
+  EventPtr event;
+  String label = "balance";
+
+  initialize(timer, tmp_timer);
+
+  cbp = MasterProtocol::create_balance_request(plan);
+
+  send_message_async(cbp, handler, timer, label);
+}
+
+
+
+void MasterClient::balance(BalancePlan &plan, Timer *timer) {
+  Timer tmp_timer(m_timeout_ms);
+  CommBufPtr cbp;
+  EventPtr event;
+  String label = "balance";
+
+  initialize(timer, tmp_timer);
+
+  try {
+    while (!timer->expired()) {
+      cbp = MasterProtocol::create_balance_request(plan);
+
+      if (!send_message(cbp, timer, event, label))
+        continue;
+      return;
+    }
+    {
+      ScopedLock lock(m_mutex);
+      HT_THROWF(Error::REQUEST_TIMEOUT,
+                "MasterClient operation %s to master %s failed", label.c_str(),
+                m_master_addr.format().c_str());
+    }
+  }
+  catch (Exception &e) {
+    if (e.code() == Error::MASTER_OPERATION_IN_PROGRESS)
+      return;
+    HT_THROW2(e.code(), e, label);
   }
 }
 

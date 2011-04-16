@@ -28,6 +28,7 @@
 #include "AsyncComm/Event.h"
 #include "AsyncComm/Protocol.h"
 
+#include "Hypertable/Lib/BalancePlan.h"
 #include "Hypertable/Lib/Types.h"
 
 
@@ -51,7 +52,7 @@ namespace Hypertable {
     static const uint64_t COMMAND_RENAME_TABLE          = 11;
     static const uint64_t COMMAND_RELINQUISH_ACKNOWLEDGE= 12;
     static const uint64_t COMMAND_FETCH_RESULT          = 13;
-    static const uint64_t COMMAND_MOVE_RANGE_EXPLICIT   = 14;
+    static const uint64_t COMMAND_BALANCE               = 14;
     static const uint64_t COMMAND_MAX                   = 15;
 
     static const char *m_command_strings[];
@@ -78,10 +79,6 @@ namespace Hypertable {
                               const String &transfer_log_dir,
                               uint64_t soft_limit, bool split);
     static CommBuf *
-    create_move_range_explicit_request(const TableIdentifier *, const RangeSpec &,
-                                       const String &target);
-
-    static CommBuf *
     create_relinquish_acknowledge_request(const TableIdentifier *, const RangeSpec &);
     static CommBuf *create_rename_table_request(const String &old_name, const String &new_name);
     static CommBuf *create_drop_table_request(const String &table_name,
@@ -90,6 +87,8 @@ namespace Hypertable {
     static CommBuf *create_fetch_result_request(int64_t id);
 
     static CommBuf *create_shutdown_request();
+
+    static CommBuf *create_balance_request(BalancePlan &plan);
 
     virtual const char *command_text(uint64_t command);
 

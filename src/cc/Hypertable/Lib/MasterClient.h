@@ -37,6 +37,7 @@
 #include "Hyperspace/HandleCallback.h"
 #include "Hyperspace/Session.h"
 
+#include "Hypertable/Lib/BalancePlan.h"
 #include "Hypertable/Lib/Types.h"
 
 
@@ -112,12 +113,6 @@ namespace Hypertable {
                     const String &log_dir, uint64_t soft_limit,
                     bool split, Timer *timer=0);
 
-    void move_range_explicit(TableIdentifier *table, RangeSpec &range,
-                             const String &target, DispatchHandler *handler,
-                             Timer *timer = 0);
-    void move_range_explicit(TableIdentifier *table, RangeSpec &range,
-                             const String &target, Timer *timer=0);
-
     void relinquish_acknowledge(TableIdentifier *table, RangeSpec &range,
                                 DispatchHandler *handler, Timer *timer = 0);
     void relinquish_acknowledge(TableIdentifier *table, RangeSpec &range,
@@ -128,6 +123,11 @@ namespace Hypertable {
     void drop_table(const String &table_name, bool if_exists, Timer *timer=0);
 
     void shutdown(Timer *timer=0);
+
+    void balance(BalancePlan &plan, DispatchHandler *handler,
+                 Timer *timer = 0);
+
+    void balance(BalancePlan &plan, Timer *timer = 0);
 
     void reload_master();
 
